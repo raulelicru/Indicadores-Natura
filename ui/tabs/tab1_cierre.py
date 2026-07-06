@@ -6,6 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+from logic.temporalidad import ORDEN_TEMPORALIDAD, serie_ordenada_temporalidad
 from ui.common import (
     COLOR_ALERTA,
     COLOR_OK,
@@ -51,7 +52,7 @@ def render(datos: dict, kpis: dict) -> None:
     with col_c:
         _distribucion(cartera, "segmentacion_rep", "Saldo por segmento")
     with col_d:
-        _distribucion(cartera, "zona", "Saldo por zona")
+        _saldo_por_temporalidad(cartera)
 
 
 def _gauge_cumplimiento(kpis: dict) -> None:
@@ -98,4 +99,25 @@ def _distribucion(cartera: pd.DataFrame, col: str, titulo: str) -> None:
     fig = px.bar(resumen, x=col, y="valor_saldo_deuda", title=titulo,
                  color=col, color_discrete_sequence=SECUENCIA)
     fig.update_layout(height=340, showlegend=False, margin=dict(t=40, b=10))
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _saldo_por_temporalidad(cartera: pd.DataFrame) -> None:
+    if "temporalidad" not in cartera.columns:
+        vacio("Sin temporalidad en la cartera.")
+        return
+    resumen = (
+        cartera.groupby("temporalidad")["valor_saldo_deuda"].sum().reset_index()
+    )
+    resumen = resumen[resumen["temporalidad"].isin(ORDEN_TEMPORALIDAD)]
+    if resumen.empty:
+        vacio("Sin saldos con temporalidad válida (T1–T7).")
+        return
+    resumen["temporalidad"] = serie_ordenada_temporalidad(resumen["temporalidad"])
+    resumen = resumen.sort_values("temporalidad")
+    fig = px.bar(resumen, x="temporalidad", y="valor_saldo_deuda",
+                 title="Saldo por temporalidad", color="temporalidad",
+                 color_discrete_sequence=SECUENCIA)
+    fig.update_layout(height=340, showlegend=False, margin=dict(t=40, b=10),
+                      xaxis_title="Temporalidad", yaxis_title="Saldo")
     st.plotly_chart(fig, use_container_width=True)
