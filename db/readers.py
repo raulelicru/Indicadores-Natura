@@ -88,6 +88,8 @@ def cargar_dataset(user_id: str, periodo: str) -> dict:
         "pagos": _tabla("pagos"),
         "gestion": _tabla("gestion"),
         "promesas": _tabla("promesas"),
+        "sms": _tabla("sms"),
+        "reminder": _tabla("reminder"),
         "comparativo": cargar_comparativo(user_id),
     }
 

@@ -6,40 +6,55 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-from ui.common import SECUENCIA, vacio
+from logic.mensajes import resumen_mensajes
+from ui.common import SECUENCIA, porcentaje, vacio
 
 
 def render(datos: dict, kpis: dict) -> None:
     st.subheader("⚙️ Operación de Gestión")
     gestion = datos.get("gestion", pd.DataFrame())
+
     if gestion.empty:
         vacio("Sin datos de gestión.")
-        return
+    else:
+        total = len(gestion)
+        clientes = gestion["codigo_de_cliente"].nunique() if \
+            "codigo_de_cliente" in gestion.columns else 0
+        intentos_prom = round(total / clientes, 2) if clientes else 0.0
+        sms_g = int((gestion.get("canal") == "SMS").sum()) if \
+            "canal" in gestion.columns else 0
+        llamadas = int((gestion.get("canal") == "Llamada").sum()) if \
+            "canal" in gestion.columns else 0
 
-    total = len(gestion)
-    clientes = gestion["codigo_de_cliente"].nunique() if \
-        "codigo_de_cliente" in gestion.columns else 0
-    intentos_prom = round(total / clientes, 2) if clientes else 0.0
-    sms = int((gestion.get("canal") == "SMS").sum()) if "canal" in gestion.columns else 0
-    llamadas = int((gestion.get("canal") == "Llamada").sum()) if \
-        "canal" in gestion.columns else 0
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Gestiones totales", f"{total:,}")
+        c2.metric("Llamadas", f"{llamadas:,}")
+        c3.metric("SMS (Vici)", f"{sms_g:,}")
+        c4.metric("Intentos promedio / cliente", f"{intentos_prom}")
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Gestiones totales", f"{total:,}")
-    c2.metric("Llamadas", f"{llamadas:,}")
-    c3.metric("SMS", f"{sms:,}")
-    c4.metric("Intentos promedio / cliente", f"{intentos_prom}")
-
-    st.divider()
-    col_a, col_b = st.columns(2)
-    with col_a:
-        _por_canal(gestion)
-    with col_b:
-        _por_asesor(gestion)
-
-    if "duracion_seg" in gestion.columns:
         st.divider()
-        _duracion(gestion)
+        col_a, col_b = st.columns(2)
+        with col_a:
+            _por_canal(gestion)
+        with col_b:
+            _por_asesor(gestion)
+
+        if "duracion_seg" in gestion.columns:
+            st.divider()
+            _duracion(gestion)
+
+    # Mensajería: SMS y Reminder (archivos dedicados).
+    sms = datos.get("sms", pd.DataFrame())
+    reminder = datos.get("reminder", pd.DataFrame())
+    if (sms is not None and not sms.empty) or \
+            (reminder is not None and not reminder.empty):
+        st.divider()
+        st.markdown("### 📨 Mensajería")
+        col_s, col_r = st.columns(2)
+        with col_s:
+            _mensajes(sms, "SMS")
+        with col_r:
+            _mensajes(reminder, "Reminder")
 
 
 def _por_canal(gestion: pd.DataFrame) -> None:
@@ -80,4 +95,26 @@ def _duracion(gestion: pd.DataFrame) -> None:
                        color_discrete_sequence=SECUENCIA)
     fig.update_layout(height=320, showlegend=False, margin=dict(t=40, b=10),
                       xaxis_title="Segundos", yaxis_title="Llamadas")
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _mensajes(df: pd.DataFrame, etiqueta: str) -> None:
+    if df is None or df.empty or "descripcion" not in df.columns:
+        vacio(f"Sin archivo de {etiqueta}.")
+        return
+    res = resumen_mensajes(df)
+    c1, c2 = st.columns(2)
+    c1.metric(f"Total {etiqueta}", f"{res['total']:,}")
+    c2.metric("% éxito", porcentaje(res["pct_exito"]))
+
+    # Distribución por descripción (estatus original del mensaje).
+    conteo = df["descripcion"].fillna("(sin dato)").value_counts().reset_index()
+    conteo.columns = ["descripcion", "conteo"]
+    fig = px.bar(conteo, x="descripcion", y="conteo",
+                 title=f"{etiqueta}: mensajes por estatus",
+                 color="descripcion", color_discrete_sequence=SECUENCIA,
+                 text="conteo")
+    fig.update_traces(textposition="outside")
+    fig.update_layout(height=320, showlegend=False, margin=dict(t=40, b=10),
+                      xaxis_title="", yaxis_title="Mensajes")
     st.plotly_chart(fig, use_container_width=True)

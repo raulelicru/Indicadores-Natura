@@ -208,12 +208,52 @@ def _build_prom_cols(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+# ---------------------------------------------------------------------------
+# SMS (archivo "Resultados SMS") — col J = Descripcion
+# ---------------------------------------------------------------------------
+def _build_sms_cols(df: pd.DataFrame) -> pd.DataFrame:
+    if df is None or df.empty:
+        return pd.DataFrame(columns=["codigo_de_cliente", "descripcion"])
+    m = _mapa_slug(df)
+    out = pd.DataFrame()
+    out["codigo_de_cliente"] = _texto(_primero(df, m, [
+        "codigo_de_cliente", "codigo_cliente", "cod_cliente", "codigo",
+        "cliente", "telefono", "numero",
+    ]))
+    out["descripcion"] = _texto(_primero(df, m, [
+        "descripcion", "estatus", "status", "resultado", "estado",
+        "mensaje", "detalle",
+    ]))
+    return out
+
+
+# ---------------------------------------------------------------------------
+# REMINDER (archivo "Reminder") — col J = Descripcion
+# ---------------------------------------------------------------------------
+def _build_reminder_cols(df: pd.DataFrame) -> pd.DataFrame:
+    if df is None or df.empty:
+        return pd.DataFrame(columns=["codigo_de_cliente", "descripcion"])
+    m = _mapa_slug(df)
+    out = pd.DataFrame()
+    out["codigo_de_cliente"] = _texto(_primero(df, m, [
+        "codigo_de_cliente", "codigo_cliente", "cod_cliente", "codigo",
+        "cliente", "telefono", "numero",
+    ]))
+    out["descripcion"] = _texto(_primero(df, m, [
+        "descripcion", "estatus", "status", "resultado", "estado",
+        "mensaje", "detalle",
+    ]))
+    return out
+
+
 # Registro de normalizadores por tipo de archivo.
 NORMALIZADORES = {
     "cartera": _build_rem_cols,
     "pagos": _build_pag_cols,
     "gestion": _build_gest_cols,
     "promesas": _build_prom_cols,
+    "sms": _build_sms_cols,
+    "reminder": _build_reminder_cols,
 }
 
 

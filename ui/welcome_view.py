@@ -13,6 +13,8 @@ TIPOS = {
     "pagos": "Pagos",
     "gestion": "Gestión (Vici)",
     "promesas": "Promesas",
+    "sms": "Resultados SMS",
+    "reminder": "Reminder",
 }
 
 

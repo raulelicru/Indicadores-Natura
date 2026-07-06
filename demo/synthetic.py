@@ -128,6 +128,34 @@ def generar_promesas(gestion: pd.DataFrame, cartera: pd.DataFrame) -> pd.DataFra
     return df
 
 
+def generar_sms(cartera: pd.DataFrame) -> pd.DataFrame:
+    r = _rng()
+    n = int(len(cartera) * 0.8)
+    clientes = cartera.sample(n=n, random_state=SEED + 2, replace=True)
+    descripcion = r.choice(
+        ["Entregado", "No entregado", "Fallido", "Enviado"],
+        size=n, p=[.62, .18, .10, .10],
+    )
+    return pd.DataFrame({
+        "codigo_de_cliente": clientes["codigo_de_cliente"].values,
+        "descripcion": descripcion,
+    })
+
+
+def generar_reminder(cartera: pd.DataFrame) -> pd.DataFrame:
+    r = _rng()
+    n = int(len(cartera) * 0.6)
+    clientes = cartera.sample(n=n, random_state=SEED + 3, replace=True)
+    descripcion = r.choice(
+        ["Exitoso", "No exitoso", "Entregado", "Rebotado"],
+        size=n, p=[.55, .20, .15, .10],
+    )
+    return pd.DataFrame({
+        "codigo_de_cliente": clientes["codigo_de_cliente"].values,
+        "descripcion": descripcion,
+    })
+
+
 def generar_comparativo() -> pd.DataFrame:
     """Histórico mensual de recuperación por segmento (para tab Comparativo)."""
     r = _rng()
@@ -156,6 +184,8 @@ def generar_dataset(periodo: str = "2025-06") -> dict:
     gestion = generar_gestion(cartera)
     promesas = generar_promesas(gestion, cartera)
     comparativo = generar_comparativo()
+    sms = generar_sms(cartera)
+    reminder = generar_reminder(cartera)
     return {
         "periodo": periodo,
         "modo": "demo",
@@ -163,5 +193,7 @@ def generar_dataset(periodo: str = "2025-06") -> dict:
         "pagos": pagos,
         "gestion": gestion,
         "promesas": promesas,
+        "sms": sms,
+        "reminder": reminder,
         "comparativo": comparativo,
     }

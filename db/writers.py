@@ -32,6 +32,12 @@ COLUMNAS = {
     "promesas": [
         "codigo_de_cliente", "monto_promesa", "fecha_promesa", "estatus",
     ],
+    "sms": [
+        "codigo_de_cliente", "descripcion",
+    ],
+    "reminder": [
+        "codigo_de_cliente", "descripcion",
+    ],
 }
 
 
@@ -111,7 +117,7 @@ def persistir_dataset(user_id: str, periodo: str, datos: dict,
     """
     nombres = nombres or {}
     resumen: dict[str, int] = {}
-    for tipo in ("cartera", "pagos", "gestion", "promesas"):
+    for tipo in ("cartera", "pagos", "gestion", "promesas", "sms", "reminder"):
         df = datos.get(tipo)
         if df is None or df.empty:
             continue
