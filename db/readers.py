@@ -4,6 +4,7 @@ from __future__ import annotations
 import pandas as pd
 
 from auth.session import cliente_autenticado
+from logic.temporalidad import temporalidad_desde_valor
 
 _PAGE = 1000
 
@@ -114,6 +115,11 @@ def _coerce(tipo: str, df: pd.DataFrame) -> pd.DataFrame:
     for col in fechas:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col], errors="coerce")
+    # Recalcular la temporalidad desde aging (col AI = índice 1–7) al leer,
+    # para que datos guardados con lógica anterior queden correctos sin
+    # necesidad de volver a cargar el archivo.
+    if tipo in ("cartera", "pagos") and "aging_de_morosidad" in df.columns:
+        df["temporalidad"] = df["aging_de_morosidad"].apply(temporalidad_desde_valor)
     return df
 
 
