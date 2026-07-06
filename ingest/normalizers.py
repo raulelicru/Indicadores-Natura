@@ -246,6 +246,31 @@ def _build_reminder_cols(df: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+# ---------------------------------------------------------------------------
+# INICIOS (archivo "Cuentas establecidas e Inicios") — col C = INICIO/Estatus
+# ---------------------------------------------------------------------------
+def _build_inicios_cols(df: pd.DataFrame) -> pd.DataFrame:
+    if df is None or df.empty:
+        return pd.DataFrame(columns=[
+            "codigo_de_cliente", "estatus", "tipo_pedido",
+        ])
+    m = _mapa_slug(df)
+    out = pd.DataFrame()
+    out["codigo_de_cliente"] = _texto(_primero(df, m, [
+        "codigo_de_cliente", "codigo_cliente", "cod_cliente", "codigo",
+        "cliente",
+    ]))
+    # La columna real se llama "INICIO" (col C): valores Inicio / Establecida.
+    out["estatus"] = _texto(_primero(df, m, [
+        "inicio", "estatus", "estado", "status", "tipo_cuenta",
+        "clasificacion", "segmento_inicio",
+    ]))
+    out["tipo_pedido"] = _texto(_primero(df, m, [
+        "tipo_pedido", "tipo_de_pedido", "canal_pedido", "origen",
+    ]))
+    return out
+
+
 # Registro de normalizadores por tipo de archivo.
 NORMALIZADORES = {
     "cartera": _build_rem_cols,
@@ -254,6 +279,7 @@ NORMALIZADORES = {
     "promesas": _build_prom_cols,
     "sms": _build_sms_cols,
     "reminder": _build_reminder_cols,
+    "inicios": _build_inicios_cols,
 }
 
 

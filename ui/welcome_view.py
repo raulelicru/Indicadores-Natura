@@ -15,6 +15,7 @@ TIPOS = {
     "promesas": "Promesas",
     "sms": "Resultados SMS",
     "reminder": "Reminder",
+    "inicios": "Cuentas establecidas e Inicios",
 }
 
 

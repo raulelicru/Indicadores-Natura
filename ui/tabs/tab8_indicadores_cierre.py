@@ -64,6 +64,47 @@ def _asignacion(datos: dict) -> None:
             fig.update_layout(height=340, showlegend=False, margin=dict(t=40, b=10))
             st.plotly_chart(fig, use_container_width=True)
 
+    _asignacion_inicios(datos)
+
+
+def _mapa_inicios(datos: dict) -> dict:
+    """Mapa codigo_de_cliente -> estatus (Inicio/Establecida)."""
+    inicios = datos.get("inicios", pd.DataFrame())
+    if inicios is None or inicios.empty or "estatus" not in inicios.columns:
+        return {}
+    dedup = inicios.dropna(subset=["codigo_de_cliente"]).drop_duplicates(
+        "codigo_de_cliente")
+    return dict(zip(dedup["codigo_de_cliente"], dedup["estatus"]))
+
+
+def _asignacion_inicios(datos: dict) -> None:
+    inicios = datos.get("inicios", pd.DataFrame())
+    if inicios is None or inicios.empty or "estatus" not in inicios.columns:
+        return
+    st.divider()
+    dedup = inicios.dropna(subset=["codigo_de_cliente"]).drop_duplicates(
+        "codigo_de_cliente")
+    col_a, col_b = st.columns(2)
+    with col_a:
+        res = dedup["estatus"].value_counts().reset_index()
+        res.columns = ["estatus", "clientes"]
+        fig = px.bar(res, x="estatus", y="clientes", color="estatus",
+                     title="Cuentas asignadas: Inicios vs Establecidas",
+                     color_discrete_sequence=SECUENCIA, text="clientes")
+        fig.update_traces(textposition="outside")
+        fig.update_layout(height=340, showlegend=False, margin=dict(t=40, b=10))
+        st.plotly_chart(fig, use_container_width=True)
+    with col_b:
+        if "tipo_pedido" in dedup.columns and dedup["tipo_pedido"].notna().any():
+            res = dedup["tipo_pedido"].value_counts().reset_index()
+            res.columns = ["tipo_pedido", "clientes"]
+            fig = px.pie(res, names="tipo_pedido", values="clientes", hole=0.45,
+                         title="Cuentas por tipo de pedido",
+                         color_discrete_sequence=SECUENCIA)
+            fig.update_traces(texttemplate="%{label}<br>%{value} (%{percent})")
+            fig.update_layout(height=340, margin=dict(t=40, b=10))
+            st.plotly_chart(fig, use_container_width=True)
+
 
 def _recuperacion(datos: dict, kpis: dict) -> None:
     c1, c2, c3 = st.columns(3)
@@ -100,6 +141,22 @@ def _recuperacion(datos: dict, kpis: dict) -> None:
         fig.update_traces(texttemplate="%{text:.2s}", textposition="top center")
         fig.update_layout(height=340, margin=dict(t=40, b=10))
         st.plotly_chart(fig, use_container_width=True)
+
+    # Recuperación por Inicios / Establecidas (cruce con archivo de inicios).
+    mapa_ini = _mapa_inicios(datos)
+    if mapa_ini:
+        p = pagos.copy()
+        p["estatus_inicio"] = p["codigo_de_cliente"].map(mapa_ini)
+        res = (p.dropna(subset=["estatus_inicio"])
+               .groupby("estatus_inicio")["pago"].sum().reset_index())
+        if not res.empty:
+            fig = px.bar(res, x="estatus_inicio", y="pago", color="estatus_inicio",
+                         title="Recuperación por Inicios vs Establecidas",
+                         color_discrete_sequence=SECUENCIA, text_auto=".2s")
+            fig.update_traces(textposition="outside")
+            fig.update_layout(height=340, showlegend=False, margin=dict(t=40, b=10),
+                              xaxis_title="", yaxis_title="Recuperado")
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def _gestion(datos: dict) -> None:

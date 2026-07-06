@@ -156,6 +156,16 @@ def generar_reminder(cartera: pd.DataFrame) -> pd.DataFrame:
     })
 
 
+def generar_inicios(cartera: pd.DataFrame) -> pd.DataFrame:
+    r = _rng()
+    clientes = cartera[["codigo_de_cliente"]].drop_duplicates().copy()
+    n = len(clientes)
+    clientes["estatus"] = r.choice(["Establecida", "Inicio"], size=n, p=[.69, .31])
+    clientes["tipo_pedido"] = r.choice(
+        ["PROPIO", "LIDER", "CALL CENTER"], size=n, p=[.71, .27, .02])
+    return clientes.reset_index(drop=True)
+
+
 def generar_comparativo() -> pd.DataFrame:
     """Histórico mensual de recuperación por segmento (para tab Comparativo)."""
     r = _rng()
@@ -186,6 +196,7 @@ def generar_dataset(periodo: str = "2025-06") -> dict:
     comparativo = generar_comparativo()
     sms = generar_sms(cartera)
     reminder = generar_reminder(cartera)
+    inicios = generar_inicios(cartera)
     return {
         "periodo": periodo,
         "modo": "demo",
@@ -195,5 +206,6 @@ def generar_dataset(periodo: str = "2025-06") -> dict:
         "promesas": promesas,
         "sms": sms,
         "reminder": reminder,
+        "inicios": inicios,
         "comparativo": comparativo,
     }
