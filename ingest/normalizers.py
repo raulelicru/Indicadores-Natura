@@ -12,7 +12,7 @@ import unicodedata
 import numpy as np
 import pandas as pd
 
-from logic.temporalidad import pac_temporalidad
+from logic.temporalidad import pac_temporalidad, temporalidad_desde_valor
 
 
 def _slug(texto: str) -> str:
@@ -104,7 +104,8 @@ def _build_rem_cols(df: pd.DataFrame) -> pd.DataFrame:
     out["estado"] = _texto(_primero(df, m, [
         "estado", "status", "estatus", "situacion",
     ]))
-    out["temporalidad"] = out["aging_de_morosidad"].apply(pac_temporalidad)
+    # La columna AI ya trae el número de temporalidad (1–7): 1→T1 … 7→T7.
+    out["temporalidad"] = out["aging_de_morosidad"].apply(temporalidad_desde_valor)
     return out
 
 
@@ -137,7 +138,8 @@ def _build_pag_cols(df: pd.DataFrame) -> pd.DataFrame:
     if temp is not None:
         out["temporalidad"] = temp
     elif aging is not None:
-        out["temporalidad"] = aging.apply(pac_temporalidad)
+        # La columna AI ya trae el número de temporalidad (1–7): 1→T1 … 7→T7.
+        out["temporalidad"] = aging.apply(temporalidad_desde_valor)
     else:
         out["temporalidad"] = np.nan
     return out

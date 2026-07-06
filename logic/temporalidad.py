@@ -40,6 +40,31 @@ def pac_temporalidad(aging) -> str | float:
     return np.nan
 
 
+def temporalidad_desde_valor(valor) -> str | float:
+    """Clasifica temporalidad tolerando dos formatos en la columna AI.
+
+    En los archivos de cierre de Natura, la columna ``aging_de_morosidad``
+    (AI) ya trae **directamente el número de temporalidad (1–7)**, no los días
+    de mora. Por eso:
+
+    - Si el valor está entre 1 y 7 → es el índice de temporalidad: 1→T1 … 7→T7.
+    - Si el valor es mayor a 7 → se asume que son días de mora y se clasifica
+      por rangos (T1 = 1–30, …), como respaldo.
+    - Nulos o <= 0 → ``np.nan``.
+    """
+    if valor is None:
+        return np.nan
+    try:
+        n = int(round(float(valor)))
+    except (TypeError, ValueError):
+        return np.nan
+    if n <= 0:
+        return np.nan
+    if 1 <= n <= 7:
+        return f"T{n}"
+    return pac_temporalidad(n)
+
+
 def aplicar_temporalidad(df: pd.DataFrame, col_aging: str = "aging_de_morosidad",
                          col_destino: str = "temporalidad") -> pd.DataFrame:
     """Agrega/actualiza la columna de temporalidad a partir del aging."""
