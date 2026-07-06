@@ -50,7 +50,8 @@ def _distribucion_canal(g: pd.DataFrame) -> None:
     res.columns = ["canal", "conteo"]
     fig = px.bar(res, x="canal", y="conteo", color="canal",
                  title="Distribución por canal",
-                 color_discrete_sequence=SECUENCIA)
+                 color_discrete_sequence=SECUENCIA, text="conteo")
+    fig.update_traces(textposition="outside")
     fig.update_layout(height=360, showlegend=False, margin=dict(t=40, b=10))
     st.plotly_chart(fig, use_container_width=True)
 
@@ -68,10 +69,12 @@ def _top_asesores_contactacion(g: pd.DataFrame) -> None:
     res = res.sort_values("gestiones", ascending=False).head(10)
     fig = go.Figure()
     fig.add_bar(x=res["asesor"], y=res["gestiones"], name="Gestiones",
-                marker_color=COLOR_PRIMARIO, yaxis="y")
+                marker_color=COLOR_PRIMARIO, yaxis="y",
+                text=res["gestiones"], textposition="outside")
     fig.add_trace(go.Scatter(
         x=res["asesor"], y=res["contactacion"], name="% contactación",
-        mode="lines+markers", marker_color=COLOR_OK, yaxis="y2",
+        mode="lines+markers+text", marker_color=COLOR_OK, yaxis="y2",
+        text=[f"{v}%" for v in res["contactacion"]], textposition="top center",
     ))
     fig.update_layout(
         title="Top 10 asesores: volumen y % contactación",
@@ -101,6 +104,8 @@ def _acuerdos_por_dia(promesas: pd.DataFrame) -> None:
     }).fillna(0).reset_index()
     fig = px.bar(res.melt(id_vars="dia", var_name="Tipo", value_name="Conteo"),
                  x="dia", y="Conteo", color="Tipo", barmode="group",
-                 color_discrete_sequence=[COLOR_PRIMARIO, COLOR_OK])
+                 color_discrete_sequence=[COLOR_PRIMARIO, COLOR_OK],
+                 text="Conteo")
+    fig.update_traces(textposition="outside")
     fig.update_layout(height=360, margin=dict(t=20, b=10))
     st.plotly_chart(fig, use_container_width=True)

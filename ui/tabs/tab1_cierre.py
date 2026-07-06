@@ -50,9 +50,12 @@ def render(datos: dict, kpis: dict) -> None:
 
     col_c, col_d = st.columns(2)
     with col_c:
-        _distribucion(cartera, "segmentacion_rep", "Saldo por segmento")
-    with col_d:
         _saldo_por_temporalidad(cartera)
+    with col_d:
+        _pct_por_temporalidad(cartera)
+
+    st.divider()
+    _distribucion(cartera, "segmentacion_rep", "Saldo por segmento")
 
 
 def _gauge_cumplimiento(kpis: dict) -> None:
@@ -80,9 +83,11 @@ def _gauge_cumplimiento(kpis: dict) -> None:
 def _recuperacion_vs_meta(kpis: dict) -> None:
     fig = go.Figure()
     fig.add_bar(name="Recuperado", x=["Cierre"], y=[kpis["recuperacion"]],
-                marker_color=COLOR_PRIMARIO)
+                marker_color=COLOR_PRIMARIO, text=[moneda(kpis["recuperacion"])],
+                textposition="outside")
     fig.add_bar(name="Meta", x=["Cierre"], y=[kpis["meta"]],
-                marker_color="#BBBBBB")
+                marker_color="#BBBBBB", text=[moneda(kpis["meta"])],
+                textposition="outside")
     fig.update_layout(barmode="group", height=300, title="Recuperación vs Meta",
                       margin=dict(t=40, b=10))
     st.plotly_chart(fig, use_container_width=True)
@@ -96,28 +101,54 @@ def _distribucion(cartera: pd.DataFrame, col: str, titulo: str) -> None:
         cartera.groupby(col)["valor_saldo_deuda"].sum()
         .sort_values(ascending=False).reset_index()
     )
+    resumen["etiqueta"] = resumen["valor_saldo_deuda"].apply(moneda)
     fig = px.bar(resumen, x=col, y="valor_saldo_deuda", title=titulo,
-                 color=col, color_discrete_sequence=SECUENCIA)
+                 color=col, color_discrete_sequence=SECUENCIA,
+                 text="etiqueta")
+    fig.update_traces(textposition="outside")
     fig.update_layout(height=340, showlegend=False, margin=dict(t=40, b=10))
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _saldo_por_temporalidad(cartera: pd.DataFrame) -> None:
+def _resumen_temporalidad(cartera: pd.DataFrame) -> pd.DataFrame | None:
+    """Saldo agrupado por temporalidad, con las 7 categorías (T1–T7) siempre."""
     if "temporalidad" not in cartera.columns:
+        return None
+    saldo = cartera.groupby("temporalidad")["valor_saldo_deuda"].sum()
+    # Reindexa para mostrar SIEMPRE las 7 temporalidades (T1–T7), aun en 0.
+    resumen = saldo.reindex(ORDEN_TEMPORALIDAD).fillna(0.0).reset_index()
+    resumen.columns = ["temporalidad", "valor_saldo_deuda"]
+    total = resumen["valor_saldo_deuda"].sum()
+    resumen["pct"] = (100 * resumen["valor_saldo_deuda"] / total) if total else 0.0
+    return resumen
+
+
+def _saldo_por_temporalidad(cartera: pd.DataFrame) -> None:
+    resumen = _resumen_temporalidad(cartera)
+    if resumen is None:
         vacio("Sin temporalidad en la cartera.")
         return
-    resumen = (
-        cartera.groupby("temporalidad")["valor_saldo_deuda"].sum().reset_index()
-    )
-    resumen = resumen[resumen["temporalidad"].isin(ORDEN_TEMPORALIDAD)]
-    if resumen.empty:
-        vacio("Sin saldos con temporalidad válida (T1–T7).")
-        return
-    resumen["temporalidad"] = serie_ordenada_temporalidad(resumen["temporalidad"])
-    resumen = resumen.sort_values("temporalidad")
+    resumen["etiqueta"] = resumen["valor_saldo_deuda"].apply(moneda)
     fig = px.bar(resumen, x="temporalidad", y="valor_saldo_deuda",
-                 title="Saldo por temporalidad", color="temporalidad",
-                 color_discrete_sequence=SECUENCIA)
-    fig.update_layout(height=340, showlegend=False, margin=dict(t=40, b=10),
+                 title="Saldo por temporalidad (T1–T7)", color="temporalidad",
+                 color_discrete_sequence=SECUENCIA, text="etiqueta")
+    fig.update_traces(textposition="outside")
+    fig.update_layout(height=360, showlegend=False, margin=dict(t=40, b=10),
                       xaxis_title="Temporalidad", yaxis_title="Saldo")
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def _pct_por_temporalidad(cartera: pd.DataFrame) -> None:
+    resumen = _resumen_temporalidad(cartera)
+    if resumen is None:
+        vacio("Sin temporalidad en la cartera.")
+        return
+    resumen["etiqueta"] = resumen["pct"].apply(lambda v: f"{v:.1f}%")
+    fig = px.bar(resumen, x="temporalidad", y="pct",
+                 title="% del saldo por temporalidad (T1–T7)",
+                 color="temporalidad", color_discrete_sequence=SECUENCIA,
+                 text="etiqueta")
+    fig.update_traces(textposition="outside")
+    fig.update_layout(height=360, showlegend=False, margin=dict(t=40, b=10),
+                      xaxis_title="Temporalidad", yaxis_title="% del saldo")
     st.plotly_chart(fig, use_container_width=True)

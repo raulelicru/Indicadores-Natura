@@ -31,7 +31,8 @@ def render(datos: dict, kpis: dict) -> None:
     fig = px.bar(quincenas.melt(id_vars="Quincena", var_name="Tipo",
                                 value_name="Monto"),
                  x="Quincena", y="Monto", color="Tipo", barmode="group",
-                 color_discrete_sequence=SECUENCIA)
+                 color_discrete_sequence=SECUENCIA, text_auto=".2s")
+    fig.update_traces(textposition="outside")
     fig.update_layout(height=320, margin=dict(t=20, b=10))
     st.plotly_chart(fig, use_container_width=True)
 

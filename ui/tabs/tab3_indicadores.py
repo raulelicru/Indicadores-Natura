@@ -41,6 +41,8 @@ def _dona_tipo(prom: pd.DataFrame) -> None:
     fig = px.pie(res, names="tipo", values="conteo", hole=0.5,
                  title="Distribución de promesas",
                  color_discrete_sequence=SECUENCIA)
+    fig.update_traces(textinfo="label+value+percent",
+                      texttemplate="%{label}<br>%{value} (%{percent})")
     fig.update_layout(height=360, margin=dict(t=40, b=10))
     st.plotly_chart(fig, use_container_width=True)
 
@@ -48,9 +50,12 @@ def _dona_tipo(prom: pd.DataFrame) -> None:
 def _acordado_vs_recuperado(kpis: dict) -> None:
     fig = go.Figure()
     fig.add_bar(name="Acordado", x=["Promesas"], y=[kpis["monto_acordado"]],
-                marker_color="#BBBBBB")
+                marker_color="#BBBBBB", text=[moneda(kpis["monto_acordado"])],
+                textposition="outside")
     fig.add_bar(name="Recuperado", x=["Promesas"],
-                y=[kpis["monto_recuperado_promesas"]], marker_color=COLOR_OK)
+                y=[kpis["monto_recuperado_promesas"]], marker_color=COLOR_OK,
+                text=[moneda(kpis["monto_recuperado_promesas"])],
+                textposition="outside")
     fig.update_layout(barmode="group", height=360,
                       title="Monto acordado vs recuperado",
                       margin=dict(t=40, b=10))

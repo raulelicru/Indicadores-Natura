@@ -30,16 +30,18 @@ def _evolucion(comp: pd.DataFrame) -> None:
     )
     fig = px.line(agg.melt(id_vars="periodo", var_name="Serie", value_name="Monto"),
                   x="periodo", y="Monto", color="Serie", markers=True,
-                  title="Recuperación vs Meta por mes",
+                  title="Recuperación vs Meta por mes", text="Monto",
                   color_discrete_sequence=SECUENCIA)
+    fig.update_traces(texttemplate="%{text:.2s}", textposition="top center")
     fig.update_layout(height=380, margin=dict(t=40, b=10))
     st.plotly_chart(fig, use_container_width=True)
 
 
 def _por_segmento(comp: pd.DataFrame) -> None:
     fig = px.line(comp, x="periodo", y="recuperacion", color="segmento",
-                  markers=True, title="Recuperación por segmento",
+                  markers=True, title="Recuperación por segmento", text="recuperacion",
                   color_discrete_sequence=SECUENCIA)
+    fig.update_traces(texttemplate="%{text:.2s}", textposition="top center")
     fig.update_layout(height=380, margin=dict(t=40, b=10))
     st.plotly_chart(fig, use_container_width=True)
 

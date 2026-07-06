@@ -48,15 +48,19 @@ def _asignacion(datos: dict) -> None:
             res.columns = ["temporalidad", "clientes"]
             fig = px.bar(res, x="temporalidad", y="clientes",
                          title="Clientes asignados por temporalidad",
-                         color_discrete_sequence=SECUENCIA)
+                         color_discrete_sequence=SECUENCIA, text_auto=True)
+            fig.update_traces(textposition="outside")
             fig.update_layout(height=340, margin=dict(t=40, b=10))
             st.plotly_chart(fig, use_container_width=True)
     with col_b:
-        if "zona" in cartera.columns:
-            res = cartera.groupby("zona")["valor_saldo_deuda"].sum().reset_index()
-            fig = px.bar(res, x="zona", y="valor_saldo_deuda",
-                         title="Saldo asignado por zona", color="zona",
-                         color_discrete_sequence=SECUENCIA)
+        if "segmentacion_rep" in cartera.columns:
+            res = (cartera.groupby("segmentacion_rep")["valor_saldo_deuda"]
+                   .sum().reset_index())
+            fig = px.bar(res, x="segmentacion_rep", y="valor_saldo_deuda",
+                         title="Saldo asignado por camino de crecimiento",
+                         color="segmentacion_rep",
+                         color_discrete_sequence=SECUENCIA, text_auto=".2s")
+            fig.update_traces(textposition="outside")
             fig.update_layout(height=340, showlegend=False, margin=dict(t=40, b=10))
             st.plotly_chart(fig, use_container_width=True)
 
@@ -81,7 +85,8 @@ def _recuperacion(datos: dict, kpis: dict) -> None:
             ORDEN_TEMPORALIDAD).fillna(0).reset_index()
         fig = px.bar(res, x="temporalidad", y="pago",
                      title="Recuperación por temporalidad",
-                     color_discrete_sequence=SECUENCIA)
+                     color_discrete_sequence=SECUENCIA, text_auto=".2s")
+        fig.update_traces(textposition="outside")
         fig.update_layout(height=360, margin=dict(t=40, b=10))
         st.plotly_chart(fig, use_container_width=True)
 
@@ -89,9 +94,10 @@ def _recuperacion(datos: dict, kpis: dict) -> None:
         serie = pagos.dropna(subset=["fecha_pago"]).copy()
         serie["dia"] = pd.to_datetime(serie["fecha_pago"]).dt.date
         diario = serie.groupby("dia")["pago"].sum().cumsum().reset_index()
-        fig = px.area(diario, x="dia", y="pago",
-                      title="Recuperación acumulada en el mes",
+        fig = px.area(diario, x="dia", y="pago", markers=True,
+                      title="Recuperación acumulada en el mes", text="pago",
                       color_discrete_sequence=SECUENCIA)
+        fig.update_traces(texttemplate="%{text:.2s}", textposition="top center")
         fig.update_layout(height=340, margin=dict(t=40, b=10))
         st.plotly_chart(fig, use_container_width=True)
 
@@ -118,7 +124,8 @@ def _gestion(datos: dict) -> None:
         res = res.sort_values("temporalidad")
         fig = px.bar(res, x="temporalidad", y="contact_rate",
                      title="Contact rate por temporalidad",
-                     color_discrete_sequence=SECUENCIA)
+                     color_discrete_sequence=SECUENCIA, text="contact_rate")
+        fig.update_traces(texttemplate="%{text}%", textposition="outside")
         fig.update_layout(height=360, margin=dict(t=40, b=10), yaxis_title="%")
         st.plotly_chart(fig, use_container_width=True)
 
@@ -136,6 +143,7 @@ def _operacion(datos: dict, kpis: dict) -> None:
             fig = px.pie(res, names="canal", values="conteo", hole=0.45,
                          title="Gestiones por canal",
                          color_discrete_sequence=SECUENCIA)
+            fig.update_traces(texttemplate="%{label}<br>%{value} (%{percent})")
             fig.update_layout(height=340, margin=dict(t=40, b=10))
             st.plotly_chart(fig, use_container_width=True)
     if "asesor" in gestion.columns:
@@ -144,7 +152,8 @@ def _operacion(datos: dict, kpis: dict) -> None:
             res.columns = ["asesor", "gestiones"]
             fig = px.bar(res, x="gestiones", y="asesor", orientation="h",
                          title="Top asesores por volumen",
-                         color_discrete_sequence=SECUENCIA)
+                         color_discrete_sequence=SECUENCIA, text="gestiones")
+            fig.update_traces(textposition="outside")
             fig.update_layout(height=340, margin=dict(t=40, b=10),
                               yaxis={"categoryorder": "total ascending"})
             st.plotly_chart(fig, use_container_width=True)

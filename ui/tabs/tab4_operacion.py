@@ -51,6 +51,7 @@ def _por_canal(gestion: pd.DataFrame) -> None:
     fig = px.pie(res, names="canal", values="conteo", hole=0.45,
                  title="Distribución por canal",
                  color_discrete_sequence=SECUENCIA)
+    fig.update_traces(texttemplate="%{label}<br>%{value} (%{percent})")
     fig.update_layout(height=360, margin=dict(t=40, b=10))
     st.plotly_chart(fig, use_container_width=True)
 
@@ -63,7 +64,8 @@ def _por_asesor(gestion: pd.DataFrame) -> None:
     res.columns = ["asesor", "gestiones"]
     fig = px.bar(res, x="gestiones", y="asesor", orientation="h",
                  title="Gestiones por asesor (top 10)",
-                 color_discrete_sequence=SECUENCIA)
+                 color_discrete_sequence=SECUENCIA, text="gestiones")
+    fig.update_traces(textposition="outside")
     fig.update_layout(height=360, margin=dict(t=40, b=10),
                       yaxis={"categoryorder": "total ascending"})
     st.plotly_chart(fig, use_container_width=True)

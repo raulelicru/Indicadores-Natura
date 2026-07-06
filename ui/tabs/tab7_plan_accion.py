@@ -77,7 +77,9 @@ def _saldo_por_temporalidad(cartera: pd.DataFrame) -> None:
     res = res.sort_values("temporalidad")
     fig = px.bar(res, x="temporalidad", y="valor_saldo_deuda",
                  title="Saldo en riesgo por temporalidad",
-                 color="temporalidad", color_discrete_sequence=SECUENCIA)
+                 color="temporalidad", color_discrete_sequence=SECUENCIA,
+                 text_auto=".2s")
+    fig.update_traces(textposition="outside")
     fig.update_layout(height=340, showlegend=False, margin=dict(t=40, b=10))
     st.plotly_chart(fig, use_container_width=True)
 

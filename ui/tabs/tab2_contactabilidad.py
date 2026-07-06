@@ -71,23 +71,26 @@ def _por_hora(g: pd.DataFrame) -> None:
     tmp["hora"] = tmp["hora_llamada"].astype(str).str.slice(0, 2)
     res = contact_rate_por(tmp, "hora").sort_values("hora")
     fig = px.line(res, x="hora", y="contact_rate", markers=True,
-                  title="Contact rate por hora",
+                  title="Contact rate por hora", text="contact_rate",
                   color_discrete_sequence=[COLOR_PRIMARIO])
+    fig.update_traces(texttemplate="%{text}%", textposition="top center")
     fig.update_layout(height=340, margin=dict(t=40, b=10), yaxis_title="%")
     st.plotly_chart(fig, use_container_width=True)
 
 
 def _por_camino(g: pd.DataFrame, cartera: pd.DataFrame) -> None:
-    if cartera.empty or "rango_edad_consultora" not in cartera.columns:
+    # Camino de crecimiento = segmentacion_rep (BL) según la plantilla de cierre.
+    if cartera.empty or "segmentacion_rep" not in cartera.columns:
         vacio("Sin camino de crecimiento.")
         return
-    mapa = cartera.set_index("codigo_de_cliente")["rango_edad_consultora"].to_dict()
+    mapa = cartera.set_index("codigo_de_cliente")["segmentacion_rep"].to_dict()
     tmp = g.copy()
     tmp["camino"] = tmp["codigo_de_cliente"].map(mapa)
     res = contact_rate_por(tmp, "camino").dropna(subset=["camino"])
     fig = px.bar(res, x="camino", y="contact_rate", color="camino",
                  title="Contact rate por camino de crecimiento",
-                 color_discrete_sequence=SECUENCIA)
+                 color_discrete_sequence=SECUENCIA, text="contact_rate")
+    fig.update_traces(texttemplate="%{text}%", textposition="outside")
     fig.update_layout(height=340, showlegend=False, margin=dict(t=40, b=10),
                       yaxis_title="%")
     st.plotly_chart(fig, use_container_width=True)
